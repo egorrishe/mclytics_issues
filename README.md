@@ -68,3 +68,42 @@
 # Development Installation
 * [Yii2](https://github.com/yiisoft/yii2-app-advanced/blob/master/docs/guide/start-installation.md)
 * DB: `CREATE DATABASE admin_vangoghexhibit DEFAULT CHARACTER SET utf8 COLLATE utf8_unicode_ci;`
+
+
+# DB statistics:
+1. In CPanel find and click button `phpMyAdmin`.
+2. [Choose DB and open SQL tab](https://prnt.sc/vcezh3)
+3. Examples of statistics:
+    * *Average execution time of cron jobs*:
+        * ```mysql
+            SELECT ROUND(MIN(cj.last_execution_time), 2) `MIN(sec)`, 
+                   ROUND(MAX(cj.last_execution_time), 2) `MAX(sec)`, 
+                   ROUND(AVG(cj.last_execution_time), 2) `AVG(sec)`
+            FROM cron_job cj
+                JOIN ticket_event_to_cron_job te2cj ON cj.id_cron_job = te2cj.cron_job_id;
+          ```
+    * *Average count of emails **per HOUR***:
+        * ```mysql
+            SELECT MIN(n), MAX(n), ROUND(AVG(n)) as `AVG(n) per HOUR`
+            FROM
+            (
+                SELECT COUNT(*) as n
+                FROM cron_job cj
+                    JOIN ticket_event_to_cron_job te2cj ON cj.id_cron_job = te2cj.cron_job_id
+                WHERE cj.id_cron_job <> 1 /*exclude 1st cron. We should analyze only regular cron jobs*/
+                GROUP BY ROUND(cj.started_at / 3600)
+            ) as per_hour;
+          ```
+    * *Average count of emails **per DAY***:
+        * ```mysql
+            SELECT MIN(n), MAX(n), ROUND(AVG(n)) as `AVG(n) per DAY`
+            FROM
+            (
+                SELECT COUNT(*) as n
+                FROM cron_job cj
+                    JOIN ticket_event_to_cron_job te2cj ON cj.id_cron_job = te2cj.cron_job_id
+                WHERE cj.id_cron_job <> 1 /*exclude 1st cron. We should analyze only regular cron jobs*/
+                GROUP BY ROUND(cj.started_at / 86400)
+            ) as per_day;
+          ```
+          
